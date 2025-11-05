@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechParts - Peças de PC de Alta Performance</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header" id="header">
+        <nav class="nav container">
+            <div class="nav__logo">
+                <i class="fas fa-microchip"></i>
+                <span>TechParts</span>
+            </div>
+
+            <div class="nav__menu" id="nav-menu">
+                <ul class="nav__list">
+                    <li class="nav__item">
+                        <a href="#home" class="nav__link active-link">Início</a>
+                    </li>
+                    <li class="nav__item">
+                        <a href="#products" class="nav__link">Produtos</a>
+                    </li>
+                    <li class="nav__item">
+                        <a href="#about" class="nav__link">Sobre</a>
+                    </li>
+                    <li class="nav__item">
+                        <a href="#contact" class="nav__link">Contato</a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav__actions">
+                <div class="nav__search">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="nav__cart" id="cart-icon">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart__count">0</span>
+                </div>
+                <div class="nav__toggle" id="nav-toggle">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero__container container">
+            <div class="hero__content">
+                <h1 class="hero__title">Peças de PC com <span class="highlight">Performance Máxima</span></h1>
+                <p class="hero__description">
+                    Monte seu setup dos sonhos com os melhores componentes do mercado. 
+                    Performance incomparável para gamers, criadores e profissionais.
+                </p>
+                <div class="hero__buttons">
+                    <a href="#products" class="btn btn--primary">Explorar Produtos</a>
+                    <a href="#about" class="btn btn--secondary">Nossa História</a>
+                </div>
+                <div class="hero__stats">
+                    <div class="stat">
+                        <i class="fas fa-rocket"></i>
+                        <h3>Performance</h3>
+                        <p>Componentes testados e aprovados para máxima eficiência</p>
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-shield-alt"></i>
+                        <h3>Garantia</h3>
+                        <p>12 a 36 meses de garantia em todos os produtos</p>
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-shipping-fast"></i>
+                        <h3>Entrega</h3>
+                        <p>Entregamos em todo Brasil com agilidade e segurança</p>
+                    </div>
+                </div>
+            </div>
+            <div class="hero__image">
+                <img src="https://images.unsplash.com/photo-1593640408182-31c70c8268f5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Setup Gamer Profissional" loading="lazy">
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="products section" id="products">
+        <div class="container">
+            <h2 class="section__title">Nossos Produtos</h2>
+            <p class="section__subtitle">Componentes de alta performance selecionados para você</p>
+
+            <div class="categories">
+                <button class="category__btn active" data-category="all">Todos</button>
+                <button class="category__btn" data-category="processadores">Processadores</button>
+                <button class="category__btn" data-category="placas-video">Placas de Vídeo</button>
+                <button class="category__btn" data-category="memorias">Memórias</button>
+                <button class="category__btn" data-category="armazenamento">Armazenamento</button>
+            </div>
+
+            <div class="products__grid" id="products-grid">
+                <!-- Produtos serão carregados via JavaScript -->
+                <div class="loading">Carregando produtos...</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about section" id="about">
+        <div class="container">
+            <div class="about__content">
+                <div class="about__text">
+                    <h2 class="section__title">Excelência em Cada Componente</h2>
+                    <p class="about__description">
+                        Na TechParts, somos apaixonados por tecnologia e performance. 
+                        Selecionamos cada componente com rigor técnico para oferecer 
+                        o melhor custo-benefício do mercado.
+                    </p>
+                    <div class="about__features">
+                        <div class="feature">
+                            <i class="fas fa-certificate"></i>
+                            <div>
+                                <h3>Qualidade Certificada</h3>
+                                <p>Todos os produtos passam por rigorosos testes de qualidade e performance</p>
+                            </div>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-tools"></i>
+                            <div>
+                                <h3>Suporte Técnico</h3>
+                                <p>Equipe especializada para auxiliar na montagem e configuração do seu setup</p>
+                            </div>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-award"></i>
+                            <div>
+                                <h3>Melhores Marcas</h3>
+                                <p>Trabalhamos apenas com fabricantes reconhecidas mundialmente</p>
+                            </div>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-clock"></i>
+                            <div>
+                                <h3>Pronto Entrega</h3>
+                                <p>Amplo estoque para entrega imediata em todo território nacional</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="about__image">
+                    <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Showroom TechParts" loading="lazy">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cart Sidebar -->
+    <div class="cart__sidebar" id="cart-sidebar">
+        <div class="cart__header">
+            <h3>Seu Carrinho</h3>
+            <button class="cart__close" id="cart-close" aria-label="Fechar carrinho">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="cart__items" id="cart-items">
+            <div class="empty-cart">Seu carrinho está vazio</div>
+        </div>
+        <div class="cart__total">
+            <span>Total:</span>
+            <span id="cart-total">R$ 0,00</span>
+        </div>
+        <button class="btn btn--primary cart__checkout" id="checkout-btn">Finalizar Compra</button>
+    </div>
+    <div class="cart__overlay" id="cart-overlay"></div>
+
+    <!-- Footer -->
+    <footer class="footer" id="contact">
+        <div class="container">
+            <div class="footer__content">
+                <div class="footer__section">
+                    <div class="footer__logo">
+                        <i class="fas fa-microchip"></i>
+                        <span>TechParts</span>
+                    </div>
+                    <p>Seu parceiro de confiança em componentes de alta performance desde 2015.</p>
+                    <div class="footer__social">
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+
+                <div class="footer__section">
+                    <h3>Produtos</h3>
+                    <ul>
+                        <li><a href="#products">Processadores</a></li>
+                        <li><a href="#products">Placas de Vídeo</a></li>
+                        <li><a href="#products">Memórias RAM</a></li>
+                        <li><a href="#products">SSDs e HDs</a></li>
+                        <li><a href="#products">Placas-mãe</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer__section">
+                    <h3>Suporte</h3>
+                    <ul>
+                        <li><a href="#">Central de Ajuda</a></li>
+                        <li><a href="#">Política de Trocas</a></li>
+                        <li><a href="#">Garantia</a></li>
+                        <li><a href="#">Entrega</a></li>
+                        <li><a href="#">Pagamento</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer__section">
+                    <h3>Contato</h3>
+                    <div class="footer__contact">
+                        <p><i class="fas fa-map-marker-alt"></i> Av. Paulista, 1000 - São Paulo, SP</p>
+                        <p><i class="fas fa-phone"></i> (11) 4002-8922</p>
+                        <p><i class="fas fa-envelope"></i> contato@techparts.com</p>
+                        <p><i class="fas fa-clock"></i> Seg-Sex: 9h-18h | Sáb: 9h-13h</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer__bottom">
+                <p>&copy; 2024 TechParts. Todos os direitos reservados. CNPJ: 12.345.678/0001-90</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SCRIPTS NO FINAL DO BODY -->
+    <script>
+        // Limpar localStorage corrompido ao carregar a página
+        if (localStorage.getItem('cart')) {
+            try {
+                JSON.parse(localStorage.getItem('cart'));
+            } catch (e) {
+                localStorage.removeItem('cart');
+                console.log('Carrinho corrompido limpo');
+            }
+        }
+    </script>
+    <script src="js/script.js"></script>
+    <script src="js/cart.js"></script>
+</body>
+</html>
