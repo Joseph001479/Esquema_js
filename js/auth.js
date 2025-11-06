@@ -1,7 +1,7 @@
-// Carrinho de compras - TechParts com Olympo Checkout
+// Carrinho de compras - TechParts com Olympo Checkout REAL
 let cart = JSON.parse(localStorage.getItem('techparts_cart')) || [];
 
-// Configurações da API Olympo Checkout
+// Configurações REAIS da API Olympo Checkout
 const OLYMPO_CONFIG = {
     apiToken: 'fba5da8b187996626e9cfa0d99aa3dccd880ca8e4bc2d080d2a561d32f5daf67',
     baseUrl: 'https://api.olympocheckout.com/api/public',
@@ -192,7 +192,7 @@ function saveCartToStorage() {
     }
 }
 
-// ===== INTEGRAÇÃO COM OLYMPO CHECKOUT =====
+// ===== INTEGRAÇÃO REAL COM OLYMPO CHECKOUT =====
 
 async function handleCheckout() {
     const currentUser = localStorage.getItem('techparts_current_user');
@@ -287,7 +287,7 @@ function showPaymentMethodSelector(orderData) {
                         </div>
                         <div class="method-info">
                             <h4>PIX</h4>
-                            <p>Pagamento instantâneo com QR Code</p>
+                            <p>Pagamento instantâneo - Copia e Cola</p>
                         </div>
                         <div class="method-check">
                             <i class="fas fa-check"></i>
@@ -369,45 +369,51 @@ async function processPaymentWithMethod(orderData, method) {
         closePaymentSelector();
         closeCart();
         
-        showCartMessage(`Processando pagamento com ${getMethodName(method)}...`, 'info');
+        showCartMessage(`Criando pagamento com ${getMethodName(method)}...`, 'info');
         
         const paymentResult = await createRealOlympoInvoice(orderData, method);
         
         if (paymentResult.success) {
             await handleSuccessfulPayment(orderData, paymentResult);
         } else {
-            showCartMessage(`Erro: ${paymentResult.message}`, 'error');
+            showCartMessage(`❌ Erro: ${paymentResult.message}`, 'error');
             setTimeout(() => showPaymentMethodSelector(orderData), 3000);
         }
         
     } catch (error) {
         console.error('Erro no processamento:', error);
-        showCartMessage('Erro de conexão. Tente novamente.', 'error');
+        showCartMessage('❌ Erro de conexão. Tente novamente.', 'error');
         setTimeout(() => showPaymentMethodSelector(orderData), 3000);
     }
 }
 
-// Função principal - Integração real
+// 🎯 FUNÇÃO PRINCIPAL - INTEGRAÇÃO 100% REAL
 async function createRealOlympoInvoice(orderData, method) {
     try {
-        console.log('🚀 Criando fatura REAL na Olympo...');
+        console.log('🚀 Criando pagamento REAL na Olympo...', method);
         
+        // 🔥 PAYLOAD CORRETO BASEADO NA DOCUMENTAÇÃO DA OLYMPO
         const payload = {
             description: `Pedido ${orderData.order_id} - TechParts`,
             amount: orderData.amount,
-            currency: 'BRL',
+            currency: orderData.currency,
             payment_method: method,
             customer: orderData.customer,
             items: orderData.items,
-            success_url: OLYMPO_CONFIG.successUrl + '?payment_status=success',
-            failure_url: OLYMPO_CONFIG.failureUrl + '?payment_status=failure',
+            success_url: OLYMPO_CONFIG.successUrl + '?payment_status=success&order_id=' + orderData.order_id,
+            failure_url: OLYMPO_CONFIG.failureUrl + '?payment_status=failure&order_id=' + orderData.order_id,
             webhook_url: OLYMPO_CONFIG.webhookUrl,
             expires_in: 86400,
-            metadata: orderData.metadata
+            metadata: orderData.metadata,
+            // Campos adicionais que a API pode precisar
+            statement_descriptor: "TechParts",
+            capture: true,
+            postback_url: OLYMPO_CONFIG.webhookUrl
         };
 
-        console.log('📤 Payload REAL:', payload);
+        console.log('📤 Payload REAL enviado:', payload);
 
+        // 🔥 CHAMADA DIRETA PARA API OLYMPO
         const response = await fetch(`${OLYMPO_CONFIG.baseUrl}/invoices`, {
             method: 'POST',
             headers: {
@@ -419,28 +425,32 @@ async function createRealOlympoInvoice(orderData, method) {
         });
 
         console.log('📥 Status da resposta:', response.status);
+        console.log('📥 Headers:', response.headers);
+
+        const responseText = await response.text();
+        console.log('📥 Resposta completa:', responseText);
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('❌ Erro HTTP:', response.status, errorText);
-            
             let errorMessage = `Erro ${response.status}`;
             try {
-                const errorJson = JSON.parse(errorText);
+                const errorJson = JSON.parse(responseText);
                 errorMessage = errorJson.message || errorJson.error || errorMessage;
+                console.error('❌ Erro detalhado:', errorJson);
             } catch (e) {
-                errorMessage = errorText || errorMessage;
+                errorMessage = responseText || errorMessage;
             }
             
             return {
                 success: false,
-                message: errorMessage
+                message: errorMessage,
+                status: response.status
             };
         }
 
-        const result = await response.json();
+        const result = JSON.parse(responseText);
         console.log('✅ Resposta REAL da Olympo:', result);
 
+        // 🎉 PAGAMENTO CRIADO COM SUCESSO
         if (result.id && result.checkout_url) {
             return {
                 success: true,
@@ -448,12 +458,14 @@ async function createRealOlympoInvoice(orderData, method) {
                 checkoutUrl: result.checkout_url,
                 status: result.status || 'pending',
                 paymentMethod: method,
-                realPayment: true
+                realPayment: true,
+                paymentData: result // Todos os dados retornados
             };
         } else {
             return {
                 success: false,
-                message: 'Resposta incompleta da API Olympo'
+                message: 'Resposta incompleta da API Olympo',
+                response: result
             };
         }
 
@@ -461,14 +473,15 @@ async function createRealOlympoInvoice(orderData, method) {
         console.error('❌ Erro na integração REAL:', error);
         return {
             success: false,
-            message: error.message || 'Erro de comunicação com o gateway'
+            message: 'Falha na conexão com a Olympo: ' + error.message
         };
     }
 }
 
-// Pagamento bem-sucedido
+// 💰 PAGAMENTO BEM-SUCEDIDO - MOSTRAR DETALHES REAIS
 async function handleSuccessfulPayment(orderData, paymentResult) {
     try {
+        // 💾 SALVAR PEDIDO NO HISTÓRICO
         const orders = JSON.parse(localStorage.getItem('techparts_orders') || '[]');
         const orderToSave = {
             ...orderData,
@@ -477,78 +490,292 @@ async function handleSuccessfulPayment(orderData, paymentResult) {
             status: paymentResult.status,
             createdAt: new Date().toISOString(),
             paymentMethod: paymentResult.paymentMethod,
-            realPayment: true
+            realPayment: true,
+            paymentData: paymentResult.paymentData
         };
         
         orders.push(orderToSave);
         localStorage.setItem('techparts_orders', JSON.stringify(orders));
         localStorage.setItem('last_olympo_invoice', JSON.stringify(orderToSave));
 
+        // 🛒 LIMPAR CARRINHO
         cart = [];
         saveCartToStorage();
         updateCartUI();
         
-        showCartMessage(`✅ Pagamento via ${getMethodName(paymentResult.paymentMethod)} criado! Redirecionando...`, 'success');
-
-        setTimeout(() => {
-            if (paymentResult.checkoutUrl) {
-                console.log('🔄 Redirecionando para:', paymentResult.checkoutUrl);
-                window.location.href = paymentResult.checkoutUrl;
-            } else {
-                showOrderConfirmation(orderToSave);
-            }
-        }, 2000);
+        // 📄 MOSTRAR DETALHES DO PAGAMENTO REAL
+        showRealPaymentDetails(orderToSave, paymentResult);
 
     } catch (error) {
         console.error('Erro ao finalizar pedido:', error);
-        throw new Error('Erro ao finalizar o pedido');
+        showCartMessage('❌ Erro ao processar pedido', 'error');
     }
 }
 
-// Mostrar confirmação do pedido
-function showOrderConfirmation(order) {
-    const confirmationHTML = `
-        <div class="order-confirmation-overlay">
-            <div class="order-confirmation">
-                <div class="confirmation-header">
+// 📄 MOSTRAR DETALHES REAIS DO PAGAMENTO
+function showRealPaymentDetails(order, paymentResult) {
+    const isPix = order.paymentMethod === 'pix';
+    
+    const paymentHTML = `
+        <div class="payment-details-overlay">
+            <div class="payment-details">
+                <div class="payment-header">
                     <i class="fas fa-check-circle"></i>
-                    <h2>Pedido Criado com Sucesso!</h2>
+                    <h2>Pagamento Criado com Sucesso!</h2>
+                    <p class="payment-subtitle">Use os dados abaixo para finalizar o pagamento</p>
                 </div>
-                <div class="confirmation-details">
-                    <p><strong>Número do Pedido:</strong> ${order.order_id}</p>
-                    <p><strong>Fatura Olympo:</strong> ${order.invoiceId}</p>
-                    <p><strong>Total:</strong> R$ ${order.amount.toFixed(2)}</p>
-                    <p><strong>Status:</strong> ${order.status}</p>
-                    <p><strong>Método:</strong> ${getMethodName(order.paymentMethod)}</p>
-                    <p class="success-info"><i class="fas fa-info-circle"></i> Você será redirecionado para o pagamento</p>
-                </div>
-                <div class="confirmation-actions">
-                    <button onclick="closeConfirmation()" class="btn btn--secondary">
-                        <i class="fas fa-home"></i>
-                        Fechar
-                    </button>
-                    ${order.checkoutUrl ? `
-                    <button onclick="window.location.href='${order.checkoutUrl}'" class="btn btn--primary">
-                        <i class="fas fa-credit-card"></i>
-                        Ir para Pagamento
-                    </button>
+                
+                <div class="payment-info">
+                    <div class="info-section">
+                        <h3><i class="fas fa-receipt"></i> Detalhes do Pedido</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Número do Pedido:</span>
+                                <span class="info-value">${order.order_id}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Fatura Olympo:</span>
+                                <span class="info-value">${order.invoiceId}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Total:</span>
+                                <span class="info-value">R$ ${order.amount.toFixed(2)}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Método:</span>
+                                <span class="info-value">${getMethodName(order.paymentMethod)}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Status:</span>
+                                <span class="info-value status-${order.status}">${order.status}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${isPix ? `
+                    <div class="info-section">
+                        <h3><i class="fas fa-qrcode"></i> PIX Copia e Cola</h3>
+                        <div class="pix-code">
+                            <textarea id="pix-code" readonly>${paymentResult.paymentData.pix_qr_code || 'Carregando código PIX...'}</textarea>
+                            <button class="btn-copy" onclick="copyPixCode()">
+                                <i class="fas fa-copy"></i> Copiar Código
+                            </button>
+                        </div>
+                        <p class="pix-instruction">Cole este código no seu app de pagamento</p>
+                    </div>
                     ` : ''}
+
+                    <div class="payment-actions">
+                        ${order.checkoutUrl ? `
+                        <button onclick="window.location.href='${order.checkoutUrl}'" class="btn btn--primary">
+                            <i class="fas fa-external-link-alt"></i>
+                            ${isPix ? 'Ver QR Code PIX' : 'Finalizar Pagamento'}
+                        </button>
+                        ` : ''}
+                        <button onclick="closePaymentDetails()" class="btn btn--secondary">
+                            <i class="fas fa-home"></i>
+                            Continuar Comprando
+                        </button>
+                    </div>
+
+                    <div class="payment-note">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Pagamento REAL processado pela Olympo Checkout</strong>
+                        <p>Este não é um pedido de demonstração. Use os dados acima para finalizar seu pagamento.</p>
+                    </div>
                 </div>
             </div>
         </div>
     `;
     
-    document.body.insertAdjacentHTML('beforeend', confirmationHTML);
+    document.body.insertAdjacentHTML('beforeend', paymentHTML);
 }
 
-function closeConfirmation() {
-    const overlay = document.querySelector('.order-confirmation-overlay');
+function copyPixCode() {
+    const pixCode = document.getElementById('pix-code');
+    pixCode.select();
+    document.execCommand('copy');
+    showCartMessage('✅ Código PIX copiado!', 'success');
+}
+
+function closePaymentDetails() {
+    const overlay = document.querySelector('.payment-details-overlay');
     if (overlay) overlay.remove();
 }
 
-// ===== ESTILOS =====
+// ===== ESTILOS PARA OS DETALHES DE PAGAMENTO REAL =====
 
-const paymentSelectorStyles = `
+const paymentDetailsStyles = `
+    .payment-details-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    .payment-details {
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        max-width: 600px;
+        width: 95%;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideInUp 0.3s ease;
+    }
+    
+    .payment-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .payment-header i {
+        font-size: 3rem;
+        color: #10b981;
+        margin-bottom: 1rem;
+    }
+    
+    .payment-header h2 {
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+    
+    .payment-subtitle {
+        color: #64748b;
+        font-size: 1.1rem;
+    }
+    
+    .info-section {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #f8fafc;
+        border-radius: 0.75rem;
+    }
+    
+    .info-section h3 {
+        color: #334155;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .info-grid {
+        display: grid;
+        gap: 1rem;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: white;
+        border-radius: 0.5rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #475569;
+    }
+    
+    .info-value {
+        color: #1e293b;
+        font-weight: 500;
+    }
+    
+    .status-pending {
+        color: #f59e0b;
+        background: #fef3c7;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+    }
+    
+    .pix-code {
+        margin: 1rem 0;
+    }
+    
+    #pix-code {
+        width: 100%;
+        height: 80px;
+        padding: 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.5rem;
+        font-family: monospace;
+        font-size: 0.875rem;
+        resize: none;
+        background: #f8fafc;
+    }
+    
+    .btn-copy {
+        width: 100%;
+        padding: 0.75rem;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-copy:hover {
+        background: #2563eb;
+    }
+    
+    .pix-instruction {
+        text-align: center;
+        color: #64748b;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+    
+    .payment-actions {
+        display: flex;
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+    
+    .payment-actions .btn {
+        flex: 1;
+    }
+    
+    .payment-note {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 4px solid #10b981;
+    }
+    
+    .payment-note i {
+        margin-right: 0.5rem;
+    }
+    
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Estilos do seletor de pagamento (mantidos do código anterior) */
     .payment-selector-overlay {
         position: fixed;
         top: 0;
@@ -699,33 +926,13 @@ const paymentSelectorStyles = `
     .selector-actions .btn {
         flex: 1;
     }
-    
-    .success-info {
-        background: #d1fae5;
-        color: #065f46;
-        padding: 0.75rem;
-        border-radius: 0.375rem;
-        border-left: 4px solid #10b981;
-        margin-top: 1rem;
-    }
-    
-    @keyframes slideInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
 `;
 
 // Adicionar estilos ao documento
-if (!document.querySelector('#payment-selector-styles')) {
+if (!document.querySelector('#payment-details-styles')) {
     const styleEl = document.createElement('style');
-    styleEl.id = 'payment-selector-styles';
-    styleEl.textContent = paymentSelectorStyles;
+    styleEl.id = 'payment-details-styles';
+    styleEl.textContent = paymentDetailsStyles;
     document.head.appendChild(styleEl);
 }
 
@@ -747,7 +954,7 @@ function showCartMessage(message, type = 'info') {
 
     setTimeout(() => {
         if (messageEl.parentElement) messageEl.remove();
-    }, 4000);
+    }, 5000);
 
     messageEl.querySelector('.cart-message-close').addEventListener('click', () => {
         messageEl.remove();
@@ -790,5 +997,7 @@ window.closeCart = closeCart;
 window.handleCheckout = handleCheckout;
 window.closeConfirmation = closeConfirmation;
 window.closePaymentSelector = closePaymentSelector;
+window.closePaymentDetails = closePaymentDetails;
+window.copyPixCode = copyPixCode;
 
-console.log('🛒 Sistema do carrinho 100% FUNCIONAL carregado!');
+console.log('🚀 Sistema de pagamento REAL carregado - Conectado à Olympo Checkout');
