@@ -1,13 +1,13 @@
 // Carrinho de compras - TechParts com Olympo Checkout REAL
 let cart = JSON.parse(localStorage.getItem('techparts_cart')) || [];
 
-// Configurações REAIS da API Olympo Checkout
+// Configurações REAIS da API Olympo Checkout - CORRIGIDAS
 const OLYMPO_CONFIG = {
     apiToken: 'fba5da8b187996626e9cfa0d99aa3dccd880ca8e4bc2d080d2a561d32f5daf67',
-    baseUrl: 'https://api.olympocheckout.com/api/public',
-    successUrl: 'https://joseph001479.github.io/Esquema_js_v2/',
-    failureUrl: 'https://joseph001479.github.io/Esquema_js_v2/',
-    webhookUrl: 'https://joseph001479.github.io/Esquema_js_v2/'
+    baseUrl: 'https://integration.olympocheckout.com', // URL CORRIGIDA baseada na documentação
+    successUrl: window.location.origin + window.location.pathname,
+    failureUrl: window.location.origin + window.location.pathname,
+    webhookUrl: window.location.origin + window.location.pathname
 };
 
 // Elementos DOM do carrinho
@@ -46,6 +46,10 @@ function checkPaymentReturn() {
     
     if (paymentStatus === 'success') {
         showCartMessage('✅ Pagamento aprovado! Pedido confirmado.', 'success');
+        // Limpar carrinho após pagamento bem-sucedido
+        cart = [];
+        saveCartToStorage();
+        updateCartUI();
         window.history.replaceState({}, document.title, window.location.pathname);
     } else if (paymentStatus === 'failure') {
         showCartMessage('❌ Pagamento recusado. Tente novamente.', 'error');
@@ -66,15 +70,16 @@ function closeCart() {
     document.body.style.overflow = '';
 }
 
-// Adicionar ao carrinho
-function addToCart(productId) {
-    const product = productsData.find(p => p.id === productId);
+// Adicionar ao carrinho - FUNÇÃO CORRIGIDA
+function addToCart(productId, productName, productPrice, productImage, productCategory) {
+    const product = {
+        id: productId,
+        name: productName,
+        price: parseFloat(productPrice),
+        image: productImage,
+        category: productCategory
+    };
     
-    if (!product) {
-        showCartMessage('Produto não encontrado', 'error');
-        return;
-    }
-
     const existingItem = cart.find(item => item.id === productId);
     
     if (existingItem) {
@@ -83,7 +88,7 @@ function addToCart(productId) {
         cart.push({
             ...product,
             quantity: 1,
-            cartId: Date.now()
+            cartId: Date.now() + Math.random()
         });
     }
 
@@ -200,9 +205,13 @@ async function handleCheckout() {
         showCartMessage('Faça login para finalizar a compra', 'error');
         closeCart();
         setTimeout(() => {
-            if (typeof authSystem !== 'undefined') authSystem.showAuthScreen('login');
-            const navMenu = document.getElementById('nav-menu');
-            if (navMenu) navMenu.classList.add('active');
+            // Tenta encontrar e mostrar o sistema de autenticação
+            const authButtons = document.querySelector('[onclick*="authSystem"]');
+            if (authButtons) {
+                authButtons.click();
+            } else {
+                showCartMessage('Sistema de login não encontrado', 'error');
+            }
         }, 500);
         return;
     }
@@ -234,7 +243,7 @@ function prepareOrderData() {
             name: item.name,
             price: item.price,
             quantity: item.quantity,
-            description: item.description || `Componente ${item.name} - ${item.category}`
+            description: `Componente ${item.name} - ${item.category}`
         })),
         customer: {
             name: currentUser.name,
@@ -251,6 +260,8 @@ function prepareOrderData() {
 // ===== SELEÇÃO DE MÉTODO DE PAGAMENTO =====
 
 function showPaymentMethodSelector(orderData) {
+    closePaymentSelector(); // Fecha qualquer seletor existente
+    
     const selectorHTML = `
         <div class="payment-selector-overlay">
             <div class="payment-selector">
@@ -287,7 +298,7 @@ function showPaymentMethodSelector(orderData) {
                         </div>
                         <div class="method-info">
                             <h4>PIX</h4>
-                            <p>Pagamento instantâneo - Copia e Cola</p>
+                            <p>Pagamento instantâneo</p>
                         </div>
                         <div class="method-check">
                             <i class="fas fa-check"></i>
@@ -369,7 +380,7 @@ async function processPaymentWithMethod(orderData, method) {
         closePaymentSelector();
         closeCart();
         
-        showCartMessage(`Criando pagamento com ${getMethodName(method)}...`, 'info');
+        showCartMessage(`Processando pagamento com ${getMethodName(method)}...`, 'info');
         
         const paymentResult = await createRealOlympoInvoice(orderData, method);
         
@@ -404,17 +415,13 @@ async function createRealOlympoInvoice(orderData, method) {
             failure_url: OLYMPO_CONFIG.failureUrl + '?payment_status=failure&order_id=' + orderData.order_id,
             webhook_url: OLYMPO_CONFIG.webhookUrl,
             expires_in: 86400,
-            metadata: orderData.metadata,
-            // Campos adicionais que a API pode precisar
-            statement_descriptor: "TechParts",
-            capture: true,
-            postback_url: OLYMPO_CONFIG.webhookUrl
+            metadata: orderData.metadata
         };
 
         console.log('📤 Payload REAL enviado:', payload);
 
-        // 🔥 CHAMADA DIRETA PARA API OLYMPO
-        const response = await fetch(`${OLYMPO_CONFIG.baseUrl}/invoices`, {
+        // 🔥 CHAMADA DIRETA PARA API OLYMPO - ENDPOINT CORRETO
+        const response = await fetch(`${OLYMPO_CONFIG.baseUrl}/faturas`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -425,7 +432,6 @@ async function createRealOlympoInvoice(orderData, method) {
         });
 
         console.log('📥 Status da resposta:', response.status);
-        console.log('📥 Headers:', response.headers);
 
         const responseText = await response.text();
         console.log('📥 Resposta completa:', responseText);
@@ -451,15 +457,15 @@ async function createRealOlympoInvoice(orderData, method) {
         console.log('✅ Resposta REAL da Olympo:', result);
 
         // 🎉 PAGAMENTO CRIADO COM SUCESSO
-        if (result.id && result.checkout_url) {
+        if (result.id) {
             return {
                 success: true,
                 invoiceId: result.id,
-                checkoutUrl: result.checkout_url,
+                checkoutUrl: result.checkout_url || `${OLYMPO_CONFIG.baseUrl}/faturas/${result.id}/link-de-pagamento`,
                 status: result.status || 'pending',
                 paymentMethod: method,
                 realPayment: true,
-                paymentData: result // Todos os dados retornados
+                paymentData: result
             };
         } else {
             return {
@@ -514,6 +520,8 @@ async function handleSuccessfulPayment(orderData, paymentResult) {
 
 // 📄 MOSTRAR DETALHES REAIS DO PAGAMENTO
 function showRealPaymentDetails(order, paymentResult) {
+    closePaymentDetails(); // Fecha qualquer detalhe existente
+    
     const isPix = order.paymentMethod === 'pix';
     
     const paymentHTML = `
@@ -552,22 +560,9 @@ function showRealPaymentDetails(order, paymentResult) {
                         </div>
                     </div>
 
-                    ${isPix ? `
-                    <div class="info-section">
-                        <h3><i class="fas fa-qrcode"></i> PIX Copia e Cola</h3>
-                        <div class="pix-code">
-                            <textarea id="pix-code" readonly>${paymentResult.paymentData.pix_qr_code || 'Carregando código PIX...'}</textarea>
-                            <button class="btn-copy" onclick="copyPixCode()">
-                                <i class="fas fa-copy"></i> Copiar Código
-                            </button>
-                        </div>
-                        <p class="pix-instruction">Cole este código no seu app de pagamento</p>
-                    </div>
-                    ` : ''}
-
                     <div class="payment-actions">
                         ${order.checkoutUrl ? `
-                        <button onclick="window.location.href='${order.checkoutUrl}'" class="btn btn--primary">
+                        <button onclick="window.open('${order.checkoutUrl}', '_blank')" class="btn btn--primary">
                             <i class="fas fa-external-link-alt"></i>
                             ${isPix ? 'Ver QR Code PIX' : 'Finalizar Pagamento'}
                         </button>
@@ -581,7 +576,7 @@ function showRealPaymentDetails(order, paymentResult) {
                     <div class="payment-note">
                         <i class="fas fa-info-circle"></i>
                         <strong>Pagamento REAL processado pela Olympo Checkout</strong>
-                        <p>Este não é um pedido de demonstração. Use os dados acima para finalizar seu pagamento.</p>
+                        <p>Este não é um pedido de demonstração. Use o link acima para finalizar seu pagamento.</p>
                     </div>
                 </div>
             </div>
@@ -589,13 +584,6 @@ function showRealPaymentDetails(order, paymentResult) {
     `;
     
     document.body.insertAdjacentHTML('beforeend', paymentHTML);
-}
-
-function copyPixCode() {
-    const pixCode = document.getElementById('pix-code');
-    pixCode.select();
-    document.execCommand('copy');
-    showCartMessage('✅ Código PIX copiado!', 'success');
 }
 
 function closePaymentDetails() {
@@ -700,48 +688,6 @@ const paymentDetailsStyles = `
         font-size: 0.875rem;
     }
     
-    .pix-code {
-        margin: 1rem 0;
-    }
-    
-    #pix-code {
-        width: 100%;
-        height: 80px;
-        padding: 1rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 0.5rem;
-        font-family: monospace;
-        font-size: 0.875rem;
-        resize: none;
-        background: #f8fafc;
-    }
-    
-    .btn-copy {
-        width: 100%;
-        padding: 0.75rem;
-        background: #3b82f6;
-        color: white;
-        border: none;
-        border-radius: 0.5rem;
-        cursor: pointer;
-        margin-top: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-    }
-    
-    .btn-copy:hover {
-        background: #2563eb;
-    }
-    
-    .pix-instruction {
-        text-align: center;
-        color: #64748b;
-        font-size: 0.875rem;
-        margin-top: 0.5rem;
-    }
-    
     .payment-actions {
         display: flex;
         gap: 1rem;
@@ -775,7 +721,7 @@ const paymentDetailsStyles = `
         }
     }
 
-    /* Estilos do seletor de pagamento (mantidos do código anterior) */
+    /* Estilos do seletor de pagamento */
     .payment-selector-overlay {
         position: fixed;
         top: 0;
@@ -926,6 +872,56 @@ const paymentDetailsStyles = `
     .selector-actions .btn {
         flex: 1;
     }
+    
+    /* Estilos das mensagens */
+    .cart-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 1rem 1.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        z-index: 10000;
+        animation: slideInRight 0.3s ease;
+        border-left: 4px solid #3b82f6;
+        max-width: 400px;
+    }
+    
+    .cart-message--success {
+        border-left-color: #10b981;
+    }
+    
+    .cart-message--error {
+        border-left-color: #ef4444;
+    }
+    
+    .cart-message--info {
+        border-left-color: #3b82f6;
+    }
+    
+    .cart-message-close {
+        background: none;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        padding: 0.25rem;
+        margin-left: auto;
+    }
+    
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
 `;
 
 // Adicionar estilos ao documento
@@ -995,9 +991,7 @@ window.updateQuantity = updateQuantity;
 window.openCart = openCart;
 window.closeCart = closeCart;
 window.handleCheckout = handleCheckout;
-window.closeConfirmation = closeConfirmation;
 window.closePaymentSelector = closePaymentSelector;
 window.closePaymentDetails = closePaymentDetails;
-window.copyPixCode = copyPixCode;
 
 console.log('🚀 Sistema de pagamento REAL carregado - Conectado à Olympo Checkout');
